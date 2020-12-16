@@ -39,3 +39,17 @@ void APickUps::OnDrop()
 	OwnerLocation += GetOwner()->GetActorForwardVector() * 25;
 
 }
+
+void APickUps::OnEquip()
+{
+	
+}
+
+void APickUps::OnUnEquip()
+{
+	
+}
+
+void APickUps::ClearOwnerUponDrop()
+{
+}

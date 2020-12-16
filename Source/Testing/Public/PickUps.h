@@ -8,6 +8,28 @@
 #include "PickUps.generated.h"
 
 
+USTRUCT(BlueprintType)
+struct FInventoryAttributes
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Inventory)
+	float Weight;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Inventory)
+	int TopLeftBox;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Inventory)
+	int RightOccupancy;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Inventory)
+	int BottomOccupancy;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Inventory)
+	class UTexture2D* ItemTexture;
+};
+
+
 UCLASS()
 class TESTING_API APickUps : public ATInteractable
 {
@@ -48,6 +70,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
 	bool bOnceUse = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
+	bool bAllowedInInventory = true;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
+	FInventoryAttributes InventoryAttributes;
+
 protected:
 	//void ChangeTransforms();
 public:
@@ -56,7 +84,43 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = Pickups)
 	virtual void OnDrop();
+	
+	UFUNCTION(BlueprintCallable, Category = Pickups)
+    virtual void OnEquip();
+    	
+    UFUNCTION(BlueprintCallable, Category = Pickups)
+    virtual void OnUnEquip();
 
+	UFUNCTION(BlueprintCallable, Category = Pickups)
+	inline FInventoryAttributes GetInventoryAttributes() const { return InventoryAttributes; }
+
+	UFUNCTION(BlueprintCallable, Category = PickUps)
+    virtual void ClearOwnerUponDrop(); 
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+	virtual void OnPressMainButton() { return; } ;
+	
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void OnPressSecondaryButton() { return; };
+    
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void OnPressActionButton() { return; };
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void OnReleaseActionButton() { return; }
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void OnReleaseSecondaryButton() { return; }
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void OnReleaseMainButton() { return; }
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual void ResetToDefaultState() { return; } //Zoomout, change firing modes and things
+
+	UFUNCTION(BlueprintCallable, Category = Input)
+    virtual bool CanBeSwapped() { return true; } //Zoomout, change firing modes and things
+	
 	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Pickups)
 	//virtual void OnRespawn();
 
@@ -72,5 +136,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	
 
 };

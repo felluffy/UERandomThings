@@ -49,6 +49,16 @@ void AWeaponBase::Fire()
 	}
 }
 
+void AWeaponBase::OnDrop()
+{
+	
+}
+
+void AWeaponBase::OnPickUp()
+{
+	
+}
+
 void AWeaponBase::FindWhereToShootFrom(FVector &SpawnLocation, FRotator &SpawnRotation)
 {
 	auto Velocity = GetOwner()->GetVelocity();
@@ -136,7 +146,10 @@ void AWeaponBase::Equip()
 
 void AWeaponBase::OnEquip()
 {
-
+	this->SetActorTickEnabled(true);
+	WeaponMesh->SetHiddenInGame(false);
+	CurrentStatus = Status::Idle;
+	AttachMeshToPawn();
 }
 
 void AWeaponBase::UnEquip()
@@ -146,12 +159,14 @@ void AWeaponBase::UnEquip()
 
 void AWeaponBase::OnUnEquip()
 {
-
+	this->SetActorTickEnabled(false);
+	WeaponMesh->SetHiddenInGame(true);
+	StopFire();
 }
 
 void AWeaponBase::DrawWeaponCrossHair(bool ShouldDraw = true)
 {
-
+	
 }
 
 void AWeaponBase::StartFire()
@@ -181,12 +196,42 @@ void AWeaponBase::AttachMeshToPawn()
 
 bool AWeaponBase::IsMagEmpty()
 {
-	return true;
+	return (CurrentAmmoInMagazine <= 0) ? true : false;
 }
 
 void AWeaponBase::AttachAttachment(UActorComponent* AttachToAdd)
 {
 
+}
+
+void AWeaponBase::OnPressActionButton()
+{
+	StartFire();
+}
+
+void AWeaponBase::OnPressSecondaryButton()
+{
+	OnZoomIn();
+}
+
+void AWeaponBase::OnPressMainButton()
+{
+	StartFire();
+}
+
+void AWeaponBase::OnReleaseActionButton()
+{
+	
+}
+
+void AWeaponBase::OnReleaseSecondaryButton()
+{
+	
+}
+
+void AWeaponBase::OnReleaseMainButton()
+{
+	StopFire();
 }
 
 void AWeaponBase::PlayAfterEffects()

@@ -119,6 +119,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void AttachAttachment(UActorComponent* AttachToAdd);
 
+	virtual void OnPressActionButton() override;// { /*StartFire();*/ }
+
+	virtual void OnPressSecondaryButton() override;// { /*zoomin/other*/ }
+
+	virtual void OnPressMainButton() override;// { StartFire(); }
+
+	virtual void OnReleaseActionButton() override;// { /*StartFire();*/ }
+
+	virtual void OnReleaseSecondaryButton() override; // { /*zoomin/other*/ }
+
+	virtual void OnReleaseMainButton() override; //{ StopFire(); }
+
+	virtual void OnDrop() override;
+
+	virtual void OnPickUp() override;
+
 protected:
 	void FindWhereToShootFrom(FVector &SpawnLocation, FRotator &SpawnRotation);
 
