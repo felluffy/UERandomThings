@@ -5,8 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TInteractable.h"
-#include "PickUps.generated.h"
+#include "GameFramework/Character.h"
 
+#include "PickUps.generated.h"
 
 USTRUCT(BlueprintType)
 struct FInventoryAttributes
@@ -76,6 +77,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
 	FInventoryAttributes InventoryAttributes;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
+	float MaxThrowDistance;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pickups)
+	float ThrowMultiplier;
+
+
+
 protected:
 	//void ChangeTransforms();
 public:
@@ -92,10 +101,19 @@ public:
     virtual void OnUnEquip();
 
 	UFUNCTION(BlueprintCallable, Category = Pickups)
+    virtual void ThrowUponDrop(bool ShouldThrow = false, FName SocketAttachmentPoint = "");
+
+	UFUNCTION(BlueprintCallable, Category = Pickups)
+    virtual void OnThrowDropAddImpulse(FVector Impulse, FVector Location, FName BoneName);
+
+	UFUNCTION(BlueprintCallable, Category = Pickups)
 	inline FInventoryAttributes GetInventoryAttributes() const { return InventoryAttributes; }
 
 	UFUNCTION(BlueprintCallable, Category = PickUps)
-    virtual void ClearOwnerUponDrop(); 
+    virtual void ClearOwnerUponDrop();
+
+	UFUNCTION(BlueprintCallable, Category = PickUps)
+    virtual void AddOwnerUponPickedUp(class ACharacter* CharacterToAdd); 
 
 	UFUNCTION(BlueprintCallable, Category = Input)
 	virtual void OnPressMainButton() { return; } ;
@@ -120,6 +138,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Input)
     virtual bool CanBeSwapped() { return true; } //Zoomout, change firing modes and things
+
+	UFUNCTION( )
+	virtual void Overlap( UPrimitiveComponent *OverlappedComponent, AActor *OtherActor, UPrimitiveComponent *OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult );
 	
 	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Pickups)
 	//virtual void OnRespawn();

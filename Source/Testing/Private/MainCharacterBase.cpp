@@ -9,7 +9,14 @@
 #include "Camera/CameraComponent.h" 	
 #include "CustomMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Animation/AnimInstance.h"
+#include "Components/SynthComponent.h"
+#include "GameFramework/DamageType.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
@@ -187,6 +194,40 @@ void AMainCharacterBase::SwapCamera(UCameraComponent* OldCamera, UCameraComponen
 		//PlayerCon->Set
 	}
 }
+
+float AMainCharacterBase::PlayAnimMontageOnMesh(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName,
+	bool UseFP)
+{
+	UAnimInstance *AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
+	if (AnimMontage && AnimInstance)
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+
+		if (Duration > 0.f)
+		{
+			// Start at a given Section.
+			if (StartSectionName != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+			}
+
+			return Duration;
+		}
+	}
+	//MeshToUse = NULL;
+	return 0.f;
+}
+
+float AMainCharacterBase::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	return 0.0f;
+}
+
+void AMainCharacterBase::StopAllMontage()
+{
+	(GetMesh() != nullptr) ? GetMesh()->AnimScriptInstance->Montage_Stop(0.0f) : false ;
+}
+
 
 // Called to bind functionality to input
 void AMainCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

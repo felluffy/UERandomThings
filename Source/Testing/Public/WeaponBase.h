@@ -22,6 +22,7 @@ enum Status
 {
 	Idle UMETA(DisplayName = "Idle"),
 	Shooting UMETA(DisplayName = "Shooting"),
+	ToReload UMETA(DisplayName = "ToReload"),
 	Reloading UMETA(DisplayName = "Reloading"),
 	Jammed UMETA(DisplayName = "Jammed"),
 	Equipping UMETA(DisplayName = "Equipping")
@@ -85,6 +86,8 @@ public:
 	
 	virtual void OnReload();
 
+	virtual void HandleReload();
+
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void UnEquip();
 
@@ -114,6 +117,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void AttachMeshToPawn();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+    virtual void ConsumeAmmo(int32 NumberOfAmmoToConsume);
+
 	bool IsMagEmpty();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -134,6 +140,12 @@ public:
 	virtual void OnDrop() override;
 
 	virtual void OnPickUp() override;
+
+	float PlayWeaponAnimation(const FWeaponAnim& Animation, float InPlayRate = 1.f);
+
+	void StopWeaponAnimation(const FWeaponAnim& Animation);
+
+    virtual void OnThrowDropAddImpulse(FVector Impulse, FVector Location, FName BoneName) override;
 
 protected:
 	void FindWhereToShootFrom(FVector &SpawnLocation, FRotator &SpawnRotation);
@@ -184,6 +196,9 @@ protected:
 	FTimerHandle FireTimer;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
+	FTimerHandle ReloadTimer;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	float SpreadXAxis;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
@@ -219,6 +234,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	float ZoomFOV;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
+	float DefaultReloadTime = 2.0f;
 
 	/*UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	float ScaleOnPickedUp = 
@@ -267,6 +284,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	float Spread;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
+	TArray<int32> NumberOfAmmoPerShotAsMode = {1};
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	TMap<TEnumAsByte<EPhysicalSurface>, float> DamageMultiplier;

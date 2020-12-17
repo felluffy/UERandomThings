@@ -122,6 +122,16 @@ protected:
 
 	virtual void SwapCamera(class UCameraComponent* OldCamera, class UCameraComponent* NewCamera);
 
+//Animation assets
+public:
+	UFUNCTION(BlueprintCallable, Category = "Animations")
+	float PlayAnimMontageOnMesh(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None, bool UseFP = false); //for first person
+
+	float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Animations")
+	void StopAllMontage();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -130,3 +140,4 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 };
+

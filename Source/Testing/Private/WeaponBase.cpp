@@ -10,6 +10,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DisplayDebugHelpers.h"
 #include "Engine.h"
+#include "MainCharacterBase.h"
 
 AWeaponBase::AWeaponBase()
 {
@@ -89,6 +90,7 @@ void AWeaponBase::OnFire()
 	PlayAfterEffects();
 	HandleProjectile(ActorSpawnParams, SpawnLocation, SpawnRotation);
 	HandleRecoil();
+	ConsumeAmmo(NumberOfAmmoPerShotAsMode[0]);
 	CurrentStatus = Status::Idle;
 }
 
@@ -136,7 +138,42 @@ void AWeaponBase::Reload()
 
 void AWeaponBase::OnReload()
 {
+	if (CurrentStatus != Status::Reloading)
+	{
+		StopFire();
+		///@TODO Handle if owner is allowed to swap weapons during reloading 
+	
+		if (CurrentAmmoInMagazine == MagazineCapacity)
+			return;
+		CurrentStatus = Status::Reloading;
 
+		float ReloadAnimationDuration = 0.0f;
+		ReloadAnimationDuration = PlayWeaponAnimation(ReloadAnimation);
+		if(ReloadAnimationDuration <= 0.0f)
+			ReloadAnimationDuration = DefaultReloadTime;
+
+		GetWorldTimerManager().SetTimer(ReloadTimer, this, &AWeaponBase::Reload, ReloadAnimationDuration, false);
+		
+	}
+}
+
+void AWeaponBase::HandleReload()
+{
+	AmmoCount += CurrentAmmoInMagazine;
+	if(AmmoCount >= MagazineCapacity)
+		CurrentAmmoInMagazine = MagazineCapacity;
+	else
+		CurrentAmmoInMagazine = AmmoCount % (MagazineCapacity + 1);
+	AmmoCount -= CurrentAmmoInMagazine;
+
+	//possibly change it to server/client from the sounds 
+	if(ReloadSound.Num() > 0)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ReloadSound[FMath::RandRange(0, ReloadSound.Num())], GetActorLocation());
+	}
+	CurrentStatus = Status::Idle;
+
+	//Check to go here if upon reload should swapping be disabled
 }
 
 void AWeaponBase::Equip()
@@ -148,6 +185,11 @@ void AWeaponBase::OnEquip()
 {
 	this->SetActorTickEnabled(true);
 	WeaponMesh->SetHiddenInGame(false);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_MAX);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	OverlapSphere->SetCollisionResponseToAllChannels(ECR_Overlap);
+	OverlapSphere->SetCollisionResponseToChannel(ECC_Camera, ECR_Overlap);
+	OverlapSphere->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	CurrentStatus = Status::Idle;
 	AttachMeshToPawn();
 }
@@ -161,6 +203,10 @@ void AWeaponBase::OnUnEquip()
 {
 	this->SetActorTickEnabled(false);
 	WeaponMesh->SetHiddenInGame(true);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Overlap);
+	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	OverlapSphere->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	OverlapSphere->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	StopFire();
 }
 
@@ -194,6 +240,13 @@ void AWeaponBase::AttachMeshToPawn()
 
 }
 
+void AWeaponBase::ConsumeAmmo(int32 NumberOfAmmoToConsume)
+{
+	CurrentAmmoInMagazine -= NumberOfAmmoToConsume;
+	if(CurrentAmmoInMagazine <= 0)
+		CurrentStatus = Status::ToReload;
+}
+
 bool AWeaponBase::IsMagEmpty()
 {
 	return (CurrentAmmoInMagazine <= 0) ? true : false;
@@ -201,7 +254,7 @@ bool AWeaponBase::IsMagEmpty()
 
 void AWeaponBase::AttachAttachment(UActorComponent* AttachToAdd)
 {
-
+	
 }
 
 void AWeaponBase::OnPressActionButton()
@@ -238,6 +291,31 @@ void AWeaponBase::PlayAfterEffects()
 {
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Play impact particles"));
+	if (FireSound.Num() > 0)
+	{
+		auto SoundToPlay = FireSound[FMath::RandRange(0, FireSound.Num())];
+		MakeNoise(FireSoundScale, GetOwner()->GetInstigator(), GetActorLocation(), FireSoundRange);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundToPlay, GetActorLocation(), 1, 1, 0, FireSoundAttenuation );
+	}
+	if (MuzzleParticle.Num() > 0)
+	{
+		auto MuzzleParticleToEmit = MuzzleParticle[FMath::RandRange(0, MuzzleParticle.Num())];
+		UGameplayStatics::SpawnEmitterAttached(MuzzleParticleToEmit, WeaponMesh, MuzzleSocketName);
+	}
+	if (FireShake != NULL)
+	{
+
+		//@TODO Fix up play shake through controller directly
+		// if (GetWorld()->GetFirstPlayerController() != NULL)
+		// 	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(FireShake, fFireShakeAlpha, ECameraAnimPlaySpace::	CameraLocal);
+		auto OwnerController = Cast<APlayerController>(GetInstigatorController());
+		if(OwnerController)
+			OwnerController->PlayerCameraManager->PlayCameraShake(FireShake, fFireShakeAlpha, ECameraAnimPlaySpace::CameraLocal);
+	}
+	if(!bZoomedIn)
+		PlayWeaponAnimation(FireAnimation);
+	else 
+		PlayWeaponAnimation(FireAnimationSights);
 }
 
 void AWeaponBase::PlayImpactParticles(EPhysicalSurface SurfaceType)
@@ -248,4 +326,39 @@ void AWeaponBase::PlayImpactParticles(EPhysicalSurface SurfaceType)
 void AWeaponBase::HandleRecoil()
 {
 
+}
+
+float AWeaponBase::PlayWeaponAnimation(const FWeaponAnim& Animation, float InPlayRate)
+{
+	float Duration = 0.0f;
+	auto Owner_ = Cast<AMainCharacterBase>(GetOwner()); 
+	if (GetOwner())
+	{
+		
+		if (Animation.Pawn3P)
+		{
+			Duration = Owner_->PlayAnimMontageOnMesh(Animation.Pawn3P, InPlayRate, NAME_None, false);
+		}
+		UAnimMontage* AnimToPlay = Animation.Pawn3P;
+		if (AnimToPlay)
+		{
+			Duration = Owner_->PlayAnimMontageOnMesh(AnimToPlay, InPlayRate, NAME_None, true);
+		}
+	}
+
+	return Duration;
+}
+
+void AWeaponBase::StopWeaponAnimation(const FWeaponAnim& Animation)
+{
+	auto Owner_ = Cast<AMainCharacterBase>(GetOwner()); 
+	if (Owner_)
+	{
+		Owner_->StopAllMontage();
+	}
+}
+
+void AWeaponBase::OnThrowDropAddImpulse(FVector Impulse, FVector Location, FName BoneName)
+{
+	WeaponMesh->AddImpulseAtLocation(Impulse, Location, BoneName);
 }

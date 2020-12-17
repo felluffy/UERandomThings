@@ -40,9 +40,13 @@ void UInventoryComponent::AddItemToInventory(APickUps* ItemToAdd)
 	if(ItemToAdd != nullptr && ItemToAdd->GetInventoryAttributes().Weight + CurrentOccupiedWeight <= MaxWeight)
 	{
 		Items.AddUnique(ItemToAdd);
+		ItemToAdd->OnPickUp();
 		if(Items.Num() == 1)
 			SetCurrentItem(nullptr, Items[0]);
-		ItemToAdd->OnPickUp();
+		else
+			ItemToAdd->OnUnEquip();
+			
+		
 
 		if (GEngine)
         		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Added %s kewllzies"), *ItemToAdd->GetName());
@@ -78,6 +82,7 @@ APickUps* UInventoryComponent::RemoveItemFromInventory(int32 Index)
 		Items.RemoveAt(Index);
 		ToReturn->OnUnEquip();
 		ToReturn->OnDrop();
+		ToReturn->ThrowUponDrop(true);
 		NextItemInInventory();
 		return ToReturn;
 	}
@@ -93,6 +98,7 @@ APickUps* UInventoryComponent::RemoveItemFromInventory()
 		Items.RemoveAt(Index);
 		ToReturn->OnUnEquip();
 		ToReturn->OnDrop();
+		ToReturn->ThrowUponDrop(true);
 		NextItemInInventory();
 		return ToReturn;
 	}
