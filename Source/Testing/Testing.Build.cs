@@ -8,7 +8,7 @@ public class Testing : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "AIModule", "GameplayTasks", "OnlineSubsystem", "NavigationSystem", "Http", "Json", "JsonUtilities", "Voice", "UMG", "AudioCapture" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

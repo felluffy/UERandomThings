@@ -27,6 +27,9 @@ public:
 
 	UFUNCTION()
     void TakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	/*UFUNCTION()
+	TakeRadialDamage*/
 	
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnHealhChangedSignature OnHealthChanged;

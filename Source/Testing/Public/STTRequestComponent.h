@@ -34,11 +34,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Events")
     void SerializeReceivedAudio(class USoundWave* SoundWave);
 
-	protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-	private:
+private:
 	class FHttpModule* Http;
 	protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Request Properties")
@@ -54,13 +50,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Request Properties")
 	TMap<FString, FString> HeaderMap;
 	
-	private:
+private:
 	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	//void SendAudioRequest(const FString& Url, const FString& RequestContent);
 	UFUNCTION(BlueprintCallable)
     void SendAudioRequest(FString Path, bool UseHeaderMap = false);
-};
-
-
-		
 };

@@ -37,9 +37,9 @@ void AWeaponBase::BeginPlay()
 
 void AWeaponBase::Fire()
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Fire"));
-	OnFire();
+	//if (GEngine)
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Fire"));
+	//OnFire();
 	if (IsMagEmpty())
 		return;
 
@@ -52,29 +52,39 @@ void AWeaponBase::Fire()
 
 void AWeaponBase::OnDrop()
 {
-	
+	WeaponMesh->SetSimulatePhysics(true);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
 }
 
 void AWeaponBase::OnPickUp()
 {
-	
+	AttachMeshToPawn();
 }
 
 void AWeaponBase::FindWhereToShootFrom(FVector &SpawnLocation, FRotator &SpawnRotation)
 {
-	auto Velocity = GetOwner()->GetVelocity();
+	auto Velocity = (GetOwner() == NULL) ?  FVector::ZeroVector : GetOwner()->GetVelocity();
 	auto Speed = Velocity.Size();
 
+
 	FVector SpreadAdjustment = FVector::ZeroVector;
-	if (MuzzleLocation)
+	if (MuzzleLocation && GetOwner() != NULL)
 	{
 		if (!bZoomedIn)
 			SpreadAdjustment = RS.VRandCone(GetOwner()->GetActorForwardVector(), Spread * Speed, Spread * Speed);
 		else
 			SpreadAdjustment = RS.VRandCone(GetOwner()->GetActorForwardVector(), Spread * Speed / 10, Spread * Speed / 10);
 	}
+	/*if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Find where to shoot from"));*/
+
+	
+
 	SpawnRotation = UKismetMathLibrary::MakeRotFromX(SpreadAdjustment);
 	SpawnLocation = ((MuzzleLocation != nullptr) ? MuzzleLocation->GetComponentLocation() : GetActorLocation());
+
+	//UKismetSystemLibrary::DrawDebugSphere(GetWorld(), SpawnLocation, 75.f, 4, FColor::Blue, 5, 10);
 }
 
 void AWeaponBase::OnFire()
@@ -98,14 +108,16 @@ void AWeaponBase::HandleProjectile(FActorSpawnParameters &ActorSpawnParams, FVec
 {
 	TArray<FHitResult> HitResults;
 	FVector LineTraceEnd = SpawnLocation + (SpawnRotation.Vector() * WeaponRange);
-	UKismetSystemLibrary::LineTraceMulti(GetWorld(), SpawnLocation, LineTraceEnd, ETraceTypeQuery::TraceTypeQuery1, true, (TArray<AActor*>{this, GetOwner()}), EDrawDebugTrace::ForDuration, HitResults, true, FColor(FColor::Red), FColor::Green, 10.0f);
+	UKismetSystemLibrary::LineTraceMulti(GetWorld(), SpawnLocation, LineTraceEnd, ETraceTypeQuery::TraceTypeQuery1, true, (TArray<AActor*>{this, GetOwner()}), EDrawDebugTrace::ForDuration, HitResults, true, DebugColor, FColor::Green, 10.0f);
 	float WeaponDamageCopy = WeaponDamage;
+	UE_LOG(LogTemp, Warning, TEXT("%d - number of hits"), HitResults.Num());
 	for (auto &it : HitResults)
 	{
 		float DamageToApply = CalculateDamageByBodyPart(it.BoneName, WeaponDamageCopy);
 		UGameplayStatics::ApplyPointDamage(it.GetActor(), DamageToApply, GetActorLocation(), it, GetOwner()->GetInstigatorController() == nullptr ? nullptr : GetOwner()->GetInstigatorController(), this, UDamageType::StaticClass());
 		WeaponDamageCopy = CalculateDamageAfterPenetration(UPhysicalMaterial::DetermineSurfaceType(it.PhysMaterial.Get()), WeaponDamageCopy);
 		PlayImpactParticles(UPhysicalMaterial::DetermineSurfaceType(it.PhysMaterial.Get()));
+		UE_LOG(LogTemp, Warning, TEXT("Applied damaged"));
 	}
 }
 
@@ -132,7 +144,7 @@ void AWeaponBase::OnZoomOut()
 void AWeaponBase::Reload()
 {
 	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reload Triggered"));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("Reload Triggered"));
 	OnReload();
 }
 
@@ -237,7 +249,34 @@ void AWeaponBase::StopFire()
 
 void AWeaponBase::AttachMeshToPawn()
 {
+	if(GetOwner() != NULL)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner is %s"), *(GetOwner()->GetName()));
+		WeaponMesh->SetHiddenInGame(false);
+		
+		auto OwnerCharacter = Cast<ACharacter>(GetOwner());	
+		if (OwnerCharacter != NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Character found"));
+			RootComponent->AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld, false), AttachmentSocketName);
+			WeaponMesh->AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld, false), AttachmentSocketName);
+			
+		}
+		//WeaponMesh->AttachToComponent(GetOwner()->, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), AttachPoint);
 
+		auto RootBoneLocation = WeaponMesh->GetBoneLocation(RootBoneName);
+		auto HandleLocation = WeaponMesh->GetSocketLocation(AttachmentSocketName);
+
+		auto DistanceLocation = RootBoneLocation - HandleLocation;
+		
+		//add offset	
+		//if(!b
+		
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner not found"));
+	}
 }
 
 void AWeaponBase::ConsumeAmmo(int32 NumberOfAmmoToConsume)
@@ -273,7 +312,7 @@ void AWeaponBase::OnPressMainButton()
 }
 
 void AWeaponBase::OnReleaseActionButton()
-{
+{	
 	
 }
 
@@ -289,8 +328,8 @@ void AWeaponBase::OnReleaseMainButton()
 
 void AWeaponBase::PlayAfterEffects()
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Play impact particles"));
+	//if (GEngine)
+	//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("Play impact particles"));
 	if (FireSound.Num() > 0)
 	{
 		auto SoundToPlay = FireSound[FMath::RandRange(0, FireSound.Num())];

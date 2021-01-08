@@ -125,6 +125,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void AttachAttachment(UActorComponent* AttachToAdd);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetAttachSocketName(FName AttachName) { this->AttachmentSocketName = AttachName; }
+
 	virtual void OnPressActionButton() override;// { /*StartFire();*/ }
 
 	virtual void OnPressSecondaryButton() override;// { /*zoomin/other*/ }
@@ -146,6 +149,8 @@ public:
 	void StopWeaponAnimation(const FWeaponAnim& Animation);
 
     virtual void OnThrowDropAddImpulse(FVector Impulse, FVector Location, FName BoneName) override;
+
+
 
 protected:
 	void FindWhereToShootFrom(FVector &SpawnLocation, FRotator &SpawnRotation);
@@ -320,4 +325,9 @@ public:
 
 private:
 	FRandomStream RS;
+
+public:
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	FColor DebugColor;
+	
 };

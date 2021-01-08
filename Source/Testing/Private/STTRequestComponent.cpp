@@ -52,7 +52,7 @@ void USTTRequestComponent::SendAudioRequest(FString Path, bool UseHeaderMap)
 	Request->SetVerb(VerbType);
 	if(!UseHeaderMap)
 	{
-		Request->OnProcessRequestComplete().BindUObject(this, &UVoiceHttpSTTComponent::OnResponseReceived);
+		Request->OnProcessRequestComplete().BindUObject(this, &USTTRequestComponent::OnResponseReceived);
 		Request->SetHeader("Content-Type", TEXT("audio/wav"));
 		Request->AppendToHeader("Content-Type", TEXT("codecs=audio/pcm"));
 		Request->AppendToHeader("Content-Type", TEXT("samplerate=16000"));
